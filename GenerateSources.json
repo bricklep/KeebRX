@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "modelsDir": "models",
+  "htmlDir": "html",
+  "outputFile": "dist/_GENERATED_SOURCE.h",
+  "useChecksum": true,
+  "minify": true,
+  "inline": false,
+  "gzip": true,
+  "outputSources": false
+}

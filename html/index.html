@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ffffff"/>
+  <title>AsyncBufferBasic</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="icon" type="image/x-icon" href="img/favicon.png">
+
+  <!-- 
+
+  <base href="http://<ESP32 IP ADDRESS>/" />
+
+  Use base tag for local development update the ip to your ESP32  
+  All relative requests after this point will prepend the base href.
+  You will also need to disable cores on your server for this to work.
+  server.disableCORS(); // useful for local development
+
+  -->
+
+  <script src="js/models.js"></script> <!-- GENERATED SCRIPT -->
+</head>
+
+<body>
+  <h1><img src="img/favicon.png" /> Hello Buffer!</h1>
+  <p>Open the developer tools to inspect the console and network.</p>
+
+  <script>
+    // Setup the AsyncBuffer API 
+    api = new AsyncBufferAPI({
+      host: window.location.host,
+      baseUrl: '', // prepend all api requests here
+      wsUrl: '/ws',
+      useChecksum: true,
+      enableDebug: false // console log the network transactions
+    });
+
+    const App = async () => {
+      let data, res;
+      // get the settings object
+      [data, res, type] = await api.get('/api/settings', 'Settings');
+      console.log("GET: /api/settings", type, data);
+      if(data.version === 1.1) {
+        // tweak some Settings
+        data.ssid = "newWiFi";
+        data.password = "newPassword";
+        data.mode = 3
+        data.colors.forEach(c => {
+          c.r = 255; // hot pink!
+          c.g = 25;
+          c.b = 127;
+        });
+      }
+      else {
+        console.log("Unknown settings version!", data.version);
+      }
+
+      // post the new Settings struct
+      [data, res, type] = await api.post('/api/settings', 'Settings', data);
+      console.log("POST: /api/settings", type, data);
+    };
+
+    App(); // start the app!
+
+    // choose light or dark theme
+    const handleDarkMode = () => {
+      const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (isDarkMode) {
+        document.documentElement.classList.add("dark");
+      }
+      const bgc = getComputedStyle(document.documentElement).getPropertyValue('--main-bg-color');
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', bgc);
+    };
+    handleDarkMode();
+  </script>
+</body>
+</html>
