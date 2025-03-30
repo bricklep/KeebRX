@@ -30,8 +30,8 @@ int frame = 0;
 Settings settings = {};
 
 // WiFi Globals
-static IPAddress local_ip(192, 168, 4, 1);
-static IPAddress gateway(192, 168, 4, 1);
+static IPAddress local_ip(192, 168, 8, 1);
+static IPAddress gateway(192, 168, 8, 1);
 static IPAddress subnet(255, 255, 255, 0);
 #define WIFI_AP_NAME "AsyncBufferAdvanced-"
 DNSServer dnsServer;
