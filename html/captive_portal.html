@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000"/>
+  <title>AsyncBufferAdvanced - Captive Portal</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="icon" type="image/x-icon" href="img/favicon.png">
+  <script src="js/preact.js"></script>
+  <script src="js/models.js"></script>
+</head>
+
+<body class="plume">
+  <div id="app"></div> 
+  <script>
+    // Initialize htm with Preact
+    const { h, render } = preact;
+    const { useState, useEffect, useRef } = preactHooks;
+    const html = htm.bind(h);
+
+    function isValidSSID(str) { return /^[a-zA-Z][^!#;+,"\t]+$/.test(str); }
+    function isValidPW(str) { return /^.{8,}$/.test(str); }
+    // Setup the api
+    api = new AsyncBufferAPI({
+      host: window.location.host,
+      baseUrl: '', // prepend all api requests here
+      useChecksum: false,
+      enableDebug: true // console log the network transactions
+    });
+
+    const App = () => {
+      const [data, setData] = useState(null);
+      const [res, setRes] = useState(null);
+      const [type, setType] = useState(null);
+      const [done, setDone] = useState(false);
+      const [showAdvanced, setShowAdvanced] = useState(false);
+
+      const handleChange = (e, field) => {
+        // update the settings object
+        setData({ ...data, [field]: e.target.value });
+      };
+      const handleShowAdvanced = () => {
+        setShowAdvanced((v) => !v);
+      }
+      const handleBack = () => {
+        setDone(false);
+      }
+      const handleSkip = () => {
+        // skip the captive portal
+        window.location.href = '/';
+        
+      };
+      const handleSave = async () => {
+        // save the changes
+        let [d, r, t] = await api.post('/api/settings/wifi', 'WiFiSettings', data);
+        if(r.ok) {
+          setDone(true);
+        }
+      };
+
+      const fetchData = async () => {
+        // get the settings object
+        let [data, res, type] = await api.get('/api/settings/wifi', 'WiFiSettings');
+        console.log("GET: /api/settings", type, data);
+        setData(data);
+        setRes(res);
+        setType(type);
+      };
+
+      useEffect(() => {
+        fetchData();
+      }, [done]);
+
+      if (done) {
+        return html`
+          <div class="container">
+            <h1><img src="img/favicon.png" /> AsyncBufferAdvanced - Captive Portal</h1>
+            <p><b>Success!</b> The WiFi changes will take effect on the next power cycle. You can now close this window.</p>
+            <button onClick=${handleBack} class="secondary">Back</button> ${" "}
+            <button onClick=${handleSkip}>Continue</button>
+          </div>
+        `;
+      }
+
+      let form ='';
+      if(data != null) {
+        form = html`
+          <form>
+            <label>SSID:
+              <input type="text" defaultValue="${data.ssid}" onInput=${(e) => handleChange(e, "ssid")} aria-invalid=${!isValidSSID(data.ssid)} />
+            </label>
+            <label>Password:
+              <input type="password" defaultValue="${data.password}" onInput=${(e) => handleChange(e, "password")} aria-invalid=${!isValidPW(data.password)} />
+            </label>
+            ${showAdvanced ? html`<div>
+              <hr />
+              <label>Access Point SSID:
+                <input type="text" defaultValue="${data.apSsid}" onInput=${(e) => handleChange(e, "apSsid")} aria-invalid=${!isValidSSID(data.apSsid)}  />
+              </label>
+              <label>Access Point Password:
+                <input type="password" defaultValue="${data.apPassword}" onInput=${(e) => handleChange(e, "apPassword")} aria-invalid=${!isValidPW(data.apPassword)} />
+              </label>
+            </div>` : null}
+            <a href="#" onClick=${handleShowAdvanced}>${showAdvanced ? 'Hide':'Show'} Advanced Settings</a><br/><br/>
+          </form>
+        `;
+      }
+      return html`
+        <div class="container">
+          <h1><img src="img/favicon.png" /> AsyncBufferAdvanced - Captive Portal</h1>
+          <p>
+            Welcome, please setup the network settings below or skip this step to proceed to the web app.
+            <br/> You can also open a web browser to <a href=${data?.wifi?.ip}>${data?.wifi?.ip}</a>
+          </p>
+          ${form}
+          <button onClick=${handleSkip} class="secondary">Skip</button> ${" "}
+          <button onClick=${handleSave}>Save & Continue</button>
+        </div>
+      `;
+    };
+
+
+    // start the preact app
+    render(html`<${App} />`, document.getElementById('app'));
+  </script>
+</body>
+</html>
